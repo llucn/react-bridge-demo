@@ -22,7 +22,8 @@ function App() {
   const [ barcode, setBarcode ] = useState<string>('n/a');
   const [ supportNfcFeature, setSupportNfcFeature ] = useState<string>('n/a');
   const [ nfcTagValue, setNfcTagValue ] = useState<string>('n/a');
-  const [ photo, setPhoto ] = useState<string | undefined>();
+  const [ mimeType, setMimeType ] = useState<string | undefined>();
+  const [ base64, setBase64 ] = useState<string | undefined>();
 
   const getColorScheme = async () => {
     const cs = await bridge.getColorScheme();
@@ -47,12 +48,24 @@ function App() {
   }
 
   const pickPhoto = async () => {
-    const id = await bridge.pickPhoto({});
+    const id = await bridge.pickPhoto({
+      type: 'imageLibrary',
+      allowsEditing: true,
+      allowsMultipleSelection: false,
+      base64: true,
+      cameraType: 'back',
+      mediaTypes: 'all',
+      quality: 0.2,
+    });
     console.log('Webapp function pickPhoto: ', id);
   }
 
   const editPhoto = async () => {
-    const id = await bridge.editPhoto({});
+    const id = await bridge.editPhoto({
+      base64: base64,
+      // path: photo,
+      stickers: [],
+    });
     console.log('Webapp function editPhoto: ', id);
   }
 
@@ -67,13 +80,16 @@ function App() {
         console.log('Webapp message readNfcTagResult: ', message);
         setNfcTagValue(message.value);
       });
-      bridge.addEventListener("pickPhoto", (message: any) => {
+      bridge.addEventListener("pickPhotoResult", (message: any) => {
         console.log('Webapp message pickPhotoResult: ', message);
-        setPhoto(message.value);
+        // setPhoto(message.assets[0].uri);
+        setMimeType(message.assets[0].mimeType);
+        setBase64(message.assets[0].base64);
       });
-      bridge.addEventListener("editPhoto", (message: any) => {
+      bridge.addEventListener("editPhotoResult", (message: any) => {
         console.log('Webapp message editPhotoResult: ', message);
-        setPhoto(message.value);
+        // setPhoto(message.path);
+        setBase64(message.base64);
       });
     };
   }, []);
@@ -100,7 +116,10 @@ function App() {
         <div>
           <button onClick={pickPhoto}>Pick Photo</button>
           <button onClick={editPhoto}>Edit Photo</button>
-          <div>Photo: {photo}</div>
+          <div>Photo: {mimeType}</div>
+          <div>
+            {base64 && (<img src={"data:" + mimeType + ";base64, " + base64} style={{width: 300, height: 300}} />)}
+          </div>
         </div>
       </header>
     </div>
