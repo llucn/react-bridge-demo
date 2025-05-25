@@ -7,9 +7,11 @@ type ColorSchemeName = 'light' | 'dark' | null | undefined;
 export interface BridgeState extends Bridge {
   query: (obj: any) => Promise<any>;
   getColorScheme: () => Promise<ColorSchemeName>;
-  scanCode: () => Promise<string>;
+  scanBarcode: () => Promise<string>;
   supportNfc: () => Promise<boolean>;
   readNfcTag: () => Promise<string>;
+  pickPhoto: (options: any) => Promise<string>;
+  editPhoto: (options: any) => Promise<string>;
 }
 
 type AppBridge = BridgeStore<BridgeState>;
@@ -17,42 +19,77 @@ const bridge = linkBridge<AppBridge>();
 
 function App() {
   const [ colorScheme, setColorScheme ] = useState<ColorSchemeName>();
-  const [ qrCode, setQrCode ] = useState<string>('n/a');
-  const [ supportNfcFeature, setSupportNfcFeature ] = useState<boolean>(false);
-  const [ tagValue, setTagValue ] = useState<string>('n/a');
+  const [ barcode, setBarcode ] = useState<string>('n/a');
+  const [ supportNfcFeature, setSupportNfcFeature ] = useState<string>('n/a');
+  const [ nfcTagValue, setNfcTagValue ] = useState<string>('n/a');
+  const [ mimeType, setMimeType ] = useState<string | undefined>();
+  const [ base64, setBase64 ] = useState<string | undefined>();
 
-  const clickGetColorScheme = async () => {
+  const getColorScheme = async () => {
     const cs = await bridge.getColorScheme();
-    console.log('Webapp: clickGetColorScheme: ', cs);
+    console.log('Webapp function getColorScheme: ', cs);
     setColorScheme(cs);
   }
 
-  const scanQrCode = async () => {
-    const id = await bridge.scanCode();
-    console.log('Webapp: scanQrCode: ', id);
+  const scanBarcode = async () => {
+    const id = await bridge.scanBarcode();
+    console.log('Webapp function scanBarcode: ', id);
   }
 
   const checkSupportNfc = async () => {
     const support = await bridge.supportNfc();
-    console.log('Webapp: support: ', support);
-    setSupportNfcFeature(support);
+    console.log('Webapp function supportNfc: ', support);
+    setSupportNfcFeature(JSON.stringify(support));
   }
 
   const readNfcTag = async () => {
     const id = await bridge.readNfcTag();
-    console.log('Webapp: scanTag: ', id);
+    console.log('Webapp function readNfcTag: ', id);
+  }
+
+  const pickPhoto = async () => {
+    const id = await bridge.pickPhoto({
+      type: 'imageLibrary',
+      allowsEditing: true,
+      allowsMultipleSelection: false,
+      base64: true,
+      cameraType: 'back',
+      mediaTypes: 'all',
+      quality: 0.2,
+    });
+    console.log('Webapp function pickPhoto: ', id);
+  }
+
+  const editPhoto = async () => {
+    const id = await bridge.editPhoto({
+      base64: base64,
+      // path: photo,
+      stickers: [],
+    });
+    console.log('Webapp function editPhoto: ', id);
   }
 
   useEffect(() => {
     // Subscribe to events from react native.
     return () => {
-      bridge.addEventListener("scanCodeResult", (message: any) => {
-        console.log('Webapp: scanCodeResult: ', message);
-        setQrCode(message.value);
+      bridge.addEventListener("scanBarcodeResult", (message: any) => {
+        console.log('Webapp message scanBarcodeResult: ', message);
+        setBarcode(message.value);
       });
       bridge.addEventListener("readNfcTagResult", (message: any) => {
-        console.log('Webapp: readNfcTagResult: ', message);
-        setTagValue(message.value);
+        console.log('Webapp message readNfcTagResult: ', message);
+        setNfcTagValue(message.value);
+      });
+      bridge.addEventListener("pickPhotoResult", (message: any) => {
+        console.log('Webapp message pickPhotoResult: ', message);
+        // setPhoto(message.assets[0].uri);
+        setMimeType(message.assets[0].mimeType);
+        setBase64(message.assets[0].base64);
+      });
+      bridge.addEventListener("editPhotoResult", (message: any) => {
+        console.log('Webapp message editPhotoResult: ', message);
+        // setPhoto(message.path);
+        setBase64(message.base64);
       });
     };
   }, []);
@@ -61,20 +98,28 @@ function App() {
     <div>
       <header>
         <div>
-          <button onClick={clickGetColorScheme}>Get Color Scheme</button>
+          <button onClick={getColorScheme}>Get Color Scheme</button>
           <div>Color Scheme: {colorScheme}</div>
         </div>
         <div>
-          <button onClick={scanQrCode}>Scan QR Code</button>
-          <div>Code: {qrCode}</div>
+          <button onClick={scanBarcode}>Scan Barcode</button>
+          <div>Code: {barcode}</div>
         </div>
         <div>
           <button onClick={checkSupportNfc}>Check NFC Support</button>
-          <div>Support NFC: {JSON.stringify(supportNfcFeature)}</div>
+          <div>Support NFC: {supportNfcFeature}</div>
         </div>
         <div>
           <button onClick={readNfcTag}>Read NFC Tag</button>
-          <div>Tag: {tagValue}</div>
+          <div>Tag: {nfcTagValue}</div>
+        </div>
+        <div>
+          <button onClick={pickPhoto}>Pick Photo</button>
+          <button onClick={editPhoto}>Edit Photo</button>
+          <div>Photo: {mimeType}</div>
+          <div>
+            {base64 && (<img src={"data:" + mimeType + ";base64, " + base64} style={{width: 300, height: 300}} />)}
+          </div>
         </div>
       </header>
     </div>
