@@ -33,18 +33,19 @@ function App() {
   const [ barcode, setBarcode ] = useState<string>('n/a');
   const [ supportNfcFeature, setSupportNfcFeature ] = useState<string>('n/a');
   const [ nfcTagValue, setNfcTagValue ] = useState<string>('n/a');
-  const [ mimeType, setMimeType ] = useState<string | undefined>();
-  const [ base64, setBase64 ] = useState<string | undefined>();
+  const [ image, setImage ] = useState<any | undefined>();
   const [ pickImageOptions, setPickImageOptions ] = useState<{
     type?: string;
     editingType?: string;
     allowsMultipleSelection?: boolean;
     mediaTypes?: string;
+    base64?: boolean;
   }>({
     type: 'imageLibrary',
     editingType: 'native',
     allowsMultipleSelection: true,
     mediaTypes: 'images',
+    base64: true,
   });
 
   const getColorScheme = async () => {
@@ -81,8 +82,9 @@ function App() {
 
   const editPhoto = async () => {
     const id = await bridge.editPhoto({
-      base64: base64,
+      path: image?.uri ?? '',
       stickers: [],
+      base64: pickImageOptions.base64,
     });
     console.log('Webapp function editPhoto: ', id);
   }
@@ -100,12 +102,11 @@ function App() {
       });
       bridge.addEventListener("pickPhotoResult", (message: any) => {
         console.log('Webapp message pickPhotoResult: ', message);
-        setMimeType(message.assets[0].mimeType);
-        setBase64(message.assets[0].base64);
+        setImage(message.assets[0]);
       });
       bridge.addEventListener("editPhotoResult", (message: any) => {
         console.log('Webapp message editPhotoResult: ', message);
-        setBase64(message.base64);
+        setImage(message.asset);
       });
     };
   }, []);
@@ -130,6 +131,7 @@ function App() {
           <div>Tag: {nfcTagValue}</div>
         </div>
         <div>
+          <label>Pick image, Type: </label>
           <select name="type" 
             value={`${pickImageOptions.type}`} 
             onChange={e => setPickImageOptions(val => {
@@ -142,6 +144,9 @@ function App() {
             <option value="camera">Camera</option>
             <option value="imageLibrary">Image Library</option>
           </select>
+        </div>
+        <div>
+        <label>Edit type: </label>
           <select name="editingType"
             value={`${pickImageOptions.editingType}`}
             onChange={e => setPickImageOptions(val => {
@@ -156,6 +161,9 @@ function App() {
             <option value="full">Full</option>
             <option value="undefined">Undefined</option>
           </select>
+        </div>
+        <div>
+          <label>Allows Multiple Selection: </label>
           <select name="allowsMultipleSelection"
             value={`${pickImageOptions.allowsMultipleSelection}`}
             onChange={e => setPickImageOptions(val => {
@@ -178,6 +186,34 @@ function App() {
             <option value="false">False</option>
             <option value="undefined">Undefined</option>
           </select>
+        </div>
+        <div>
+          <label>Base64: </label>
+          <select name="base64"
+            value={`${pickImageOptions.base64}`}
+            onChange={e => setPickImageOptions(val => {
+              var base64;
+              switch (e.target.value) {
+                case 'true':
+                  base64 = true;
+                  break;
+                case 'false':
+                  base64 = false;
+                  break;
+              }
+              return {
+                ...val,
+                base64,
+              };
+            })}
+          >
+            <option value="true">True</option>
+            <option value="false">False</option>
+            <option value="undefined">Undefined</option>
+          </select>
+        </div>
+        <div>
+        <label>Media Types: </label>
           <select name="mediaTypes"
             value={`${pickImageOptions.mediaTypes}`}
             onChange={e => setPickImageOptions(val => {
@@ -196,14 +232,20 @@ function App() {
           <button onClick={pickPhoto}>Pick Photo</button>
         </div>
         <div>
-          <button onClick={editPhoto} disabled={base64 === undefined}>Edit Photo</button>
+          <button onClick={editPhoto} disabled={image === undefined}>Edit Photo</button>
         </div>
         <div>
-          <div>Photo: {mimeType}</div>
+          <div>Image file name: {image?.fileName}</div>
+          <div>Image file size: {image?.fileSize}</div>
+          <div>Image height: {image?.height}</div>
+          <div>Image width: {image?.width}</div>
+          <div>Image type: {image?.type}</div>
+          <div>Image mime type: {image?.mimeType}</div>
+          <div>Image URI: {image?.uri}</div>
           <div>
-            {base64 && (
+            {image?.mimeType && image?.base64 && (
               <img 
-                src={"data:" + mimeType + ";base64, " + base64} 
+                src={"data:" + image.mimeType + ";base64, " + image.base64} 
                 style={{width: 300, height: 300}} 
                 alt='n/a' 
               />
