@@ -99,11 +99,11 @@ function App() {
     return () => {
       bridge.addEventListener("scanBarcodeResult", (message: any) => {
         console.log('Webapp message scanBarcodeResult: ', message);
-        setBarcode(message.value);
+        setBarcode(message.values);
       });
       bridge.addEventListener("readNfcTagResult", (message: any) => {
         console.log('Webapp message readNfcTagResult: ', message);
-        setNfcTagValue(message.value);
+        setNfcTagValue(message.values);
       });
       bridge.addEventListener("pickPhotoResult", (message: any) => {
         console.log('Webapp message pickPhotoResult: ', message);
@@ -119,14 +119,17 @@ function App() {
   return (
     <div>
       <header>
+        <h3>Color Scheme</h3>
         <div>
           <button onClick={getColorScheme}>Get Color Scheme</button>
           <div>Color Scheme: {colorScheme}</div>
         </div>
+        <h3>Barcode</h3>
         <div>
           <button onClick={scanBarcode}>Scan Barcode</button>
           <div>Code: {barcode}</div>
         </div>
+        <h3>NFC</h3>
         <div>
           <button onClick={checkSupportNfc}>Check NFC Support</button>
           <div>Support NFC: {supportNfcFeature}</div>
@@ -160,6 +163,7 @@ function App() {
           <button onClick={readNfcTag}>Read NFC Tag</button>
           <div>Tag: {nfcTagValue}</div>
         </div>
+        <h3>Pick Image</h3>
         <div>
           <label>Pick image, Type: </label>
           <select name="type" 
@@ -261,6 +265,7 @@ function App() {
           </select>
           <button onClick={pickPhoto}>Pick Photo</button>
         </div>
+        <h3>Pick Image</h3>
         <div>
           <button onClick={editPhoto} disabled={image === undefined}>Edit Photo</button>
         </div>
