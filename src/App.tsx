@@ -9,7 +9,7 @@ export interface BridgeState extends Bridge {
   getColorScheme: () => Promise<ColorSchemeName>;
   scanBarcode: () => Promise<string>;
   supportNfc: () => Promise<boolean>;
-  readNfcTag: () => Promise<string>;
+  readNfcTag: (infinity?: boolean) => Promise<string>;
   pickPhoto: (options: any) => Promise<string>;
   editPhoto: (options: any) => Promise<string>;
 }
@@ -32,6 +32,11 @@ function App() {
   const [ colorScheme, setColorScheme ] = useState<ColorSchemeName>();
   const [ barcode, setBarcode ] = useState<string>('n/a');
   const [ supportNfcFeature, setSupportNfcFeature ] = useState<string>('n/a');
+  const [ readNfcOptions, setReadNfcOptions ] = useState<{
+    infinity?: boolean,
+  }>({
+    infinity: undefined,
+  });
   const [ nfcTagValue, setNfcTagValue ] = useState<string>('n/a');
   const [ image, setImage ] = useState<any | undefined>();
   const [ pickImageOptions, setPickImageOptions ] = useState<{
@@ -66,7 +71,7 @@ function App() {
   }
 
   const readNfcTag = async () => {
-    const id = await bridge.readNfcTag();
+    const id = await bridge.readNfcTag(readNfcOptions.infinity);
     console.log('Webapp function readNfcTag: ', id);
   }
 
@@ -94,11 +99,11 @@ function App() {
     return () => {
       bridge.addEventListener("scanBarcodeResult", (message: any) => {
         console.log('Webapp message scanBarcodeResult: ', message);
-        setBarcode(message.value);
+        setBarcode(message.values);
       });
       bridge.addEventListener("readNfcTagResult", (message: any) => {
         console.log('Webapp message readNfcTagResult: ', message);
-        setNfcTagValue(message.value);
+        setNfcTagValue(message.values);
       });
       bridge.addEventListener("pickPhotoResult", (message: any) => {
         console.log('Webapp message pickPhotoResult: ', message);
@@ -114,22 +119,51 @@ function App() {
   return (
     <div>
       <header>
+        <h3>Color Scheme</h3>
         <div>
           <button onClick={getColorScheme}>Get Color Scheme</button>
           <div>Color Scheme: {colorScheme}</div>
         </div>
+        <h3>Barcode</h3>
         <div>
           <button onClick={scanBarcode}>Scan Barcode</button>
           <div>Code: {barcode}</div>
         </div>
+        <h3>NFC</h3>
         <div>
           <button onClick={checkSupportNfc}>Check NFC Support</button>
           <div>Support NFC: {supportNfcFeature}</div>
         </div>
         <div>
+          <label>Infinity: </label>
+          <select name="infinity"
+            value={`${readNfcOptions.infinity}`}
+            onChange={e => setReadNfcOptions(val => {
+              var infinity;
+              switch (e.target.value) {
+                case 'true':
+                  infinity = true;
+                  break;
+                case 'false':
+                  infinity = false;
+                  break;
+              }
+              return {
+                ...val,
+                infinity,
+              };
+            })}
+          >
+            <option value="true">True</option>
+            <option value="false">False</option>
+            <option value="undefined">Undefined</option>
+          </select>
+        </div>
+        <div>
           <button onClick={readNfcTag}>Read NFC Tag</button>
           <div>Tag: {nfcTagValue}</div>
         </div>
+        <h3>Pick Image</h3>
         <div>
           <label>Pick image, Type: </label>
           <select name="type" 
@@ -146,7 +180,7 @@ function App() {
           </select>
         </div>
         <div>
-        <label>Edit type: </label>
+          <label>Edit type: </label>
           <select name="editingType"
             value={`${pickImageOptions.editingType}`}
             onChange={e => setPickImageOptions(val => {
@@ -231,6 +265,7 @@ function App() {
           </select>
           <button onClick={pickPhoto}>Pick Photo</button>
         </div>
+        <h3>Pick Image</h3>
         <div>
           <button onClick={editPhoto} disabled={image === undefined}>Edit Photo</button>
         </div>
