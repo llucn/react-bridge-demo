@@ -99,19 +99,27 @@ function App() {
     return () => {
       bridge.addEventListener("scanBarcodeResult", (message: any) => {
         console.log('Webapp message scanBarcodeResult: ', message);
-        setBarcode(message.values);
+        if (!message.canceled) {
+          setBarcode(message.values);
+        }
       });
       bridge.addEventListener("readNfcTagResult", (message: any) => {
         console.log('Webapp message readNfcTagResult: ', message);
-        setNfcTagValue(message.values);
+        if (!message.canceled) {
+          setNfcTagValue(message.values);
+        }
       });
       bridge.addEventListener("pickPhotoResult", (message: any) => {
         console.log('Webapp message pickPhotoResult: ', message);
-        setImage(message.assets[0]);
+        if (!message.canceled) {
+          setImage(message.assets[0]);
+        }
       });
       bridge.addEventListener("editPhotoResult", (message: any) => {
         console.log('Webapp message editPhotoResult: ', message);
-        setImage(message.asset);
+        if (!message.canceled) {
+          setImage(message.asset);
+        }
       });
     };
   }, []);
