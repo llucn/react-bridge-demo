@@ -12,6 +12,7 @@ export interface BridgeState extends Bridge {
   readNfcTag: (infinity?: boolean) => Promise<string>;
   pickPhoto: (options: any) => Promise<string>;
   editPhoto: (options: any) => Promise<string>;
+  getApiUrl: () => Promise<string>;
 }
 
 type AppBridge = BridgeStore<BridgeState>;
@@ -52,6 +53,7 @@ function App() {
     mediaTypes: 'images',
     base64: true,
   });
+  const [ apiUrl, setApiUrl ] = useState<string>('');
 
   const getColorScheme = async () => {
     const cs = await bridge.getColorScheme();
@@ -92,6 +94,12 @@ function App() {
       base64: pickImageOptions.base64,
     });
     console.log('Webapp function editPhoto: ', id);
+  }
+
+  const getApiUrl = async () => {
+    const url = await bridge.getApiUrl();
+    console.log('Webapp function getApiUrl: ', url);
+    setApiUrl(url);
   }
 
   useEffect(() => {
@@ -294,6 +302,11 @@ function App() {
               />
             )}
           </div>
+        </div>
+        <h3>API URL</h3>
+        <div>
+          <button onClick={getApiUrl}>Get API URL</button>
+          <div>API URL: {apiUrl}</div>
         </div>
       </header>
     </div>
