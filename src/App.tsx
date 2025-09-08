@@ -13,6 +13,7 @@ export interface BridgeState extends Bridge {
   pickPhoto: (options: any) => Promise<string>;
   editPhoto: (options: any) => Promise<string>;
   getApiUrl: () => Promise<string>;
+  getToken: () => Promise<string>;
 }
 
 type AppBridge = BridgeStore<BridgeState>;
@@ -54,6 +55,7 @@ function App() {
     base64: true,
   });
   const [ apiUrl, setApiUrl ] = useState<string>('');
+  const [ token, setToken ] = useState<string>('');
 
   const getColorScheme = async () => {
     const cs = await bridge.getColorScheme();
@@ -100,6 +102,12 @@ function App() {
     const url = await bridge.getApiUrl();
     console.log('Webapp function getApiUrl: ', url);
     setApiUrl(url);
+  }
+
+  const getToken = async () => {
+    const t = await bridge.getToken();
+    console.log('Webapp function getToken: ', t);
+    setToken(t);
   }
 
   useEffect(() => {
@@ -307,6 +315,11 @@ function App() {
         <div>
           <button onClick={getApiUrl}>Get API URL</button>
           <div>API URL: {apiUrl}</div>
+        </div>
+        <h3>Token</h3>
+        <div>
+          <button onClick={getToken}>Get Token</button>
+          <div>Token: {token}</div>
         </div>
       </header>
     </div>
