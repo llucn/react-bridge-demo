@@ -4,6 +4,13 @@ import './App.css';
 
 type ColorSchemeName = 'light' | 'dark' | null | undefined;
 
+export interface ServiceDeployment {
+	url: string;
+	stage: string;
+	serviceName: string;
+	createdAt: string;
+}
+
 export interface BridgeState extends Bridge {
   query: (obj: any) => Promise<any>;
   getColorScheme: () => Promise<ColorSchemeName>;
@@ -14,6 +21,8 @@ export interface BridgeState extends Bridge {
   editPhoto: (options: any) => Promise<string>;
   getApiUrl: () => Promise<string>;
   getToken: () => Promise<string>;
+  setWorkforceUrls: (values: Array<ServiceDeployment> | null) => Promise<void>;
+  getWorkforceUrls: () => Promise<Array<ServiceDeployment> | null>;
 }
 
 type AppBridge = BridgeStore<BridgeState>;
@@ -56,6 +65,7 @@ function App() {
   });
   const [ apiUrl, setApiUrl ] = useState<string>('');
   const [ token, setToken ] = useState<string>('');
+  const [ servers, setServers ] = useState<ServiceDeployment[]>([]);
 
   const getColorScheme = async () => {
     const cs = await bridge.getColorScheme();
@@ -108,6 +118,30 @@ function App() {
     const t = await bridge.getToken();
     console.log('Webapp function getToken: ', t);
     setToken(t);
+  }
+
+  const showServerUrls = async () => {
+    const values = await bridge.getWorkforceUrls();
+    console.log('Webapp function showServerUrls: ', values);
+    if (values) {
+      setServers(values);
+    }
+  }
+
+  const setServerUrls = async () => {
+    const values = [{
+      url: 'https://delta-workforce-dev-api.dev.deltasoft365.com',
+      stage: 'dev',
+      serviceName: 'WorkForce Dev',
+      createdAt: new Date().toISOString(),
+    }, {
+      url: 'http://localhost:3001',
+      stage: 'local',
+      serviceName: 'WorkForce',
+      createdAt: new Date().toISOString(),
+    }];
+    await bridge.setWorkforceUrls([]);
+    console.log('Webapp function setServerUrls: ', values);
   }
 
   useEffect(() => {
@@ -320,6 +354,14 @@ function App() {
         <div>
           <button onClick={getToken}>Get Token</button>
           <div>Token: {token}</div>
+        </div>
+        <h3>Server URLs</h3>
+        <div>
+          <button onClick={showServerUrls}>Show Server URLs</button>
+          <button onClick={setServerUrls}>Set Server URLs</button>
+          <div>
+            <div>{JSON.stringify(servers)}</div>
+          </div>
         </div>
       </header>
     </div>
