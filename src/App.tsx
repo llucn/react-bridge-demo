@@ -23,6 +23,7 @@ export interface BridgeState extends Bridge {
   getToken: () => Promise<string>;
   setWorkforceUrls: (values: Array<ServiceDeployment> | null) => Promise<void>;
   getWorkforceUrls: () => Promise<Array<ServiceDeployment> | null>;
+  submitUpload: (objectType: string, objectId: string, asset: any) => Promise<string | undefined>;
 }
 
 type AppBridge = BridgeStore<BridgeState>;
@@ -66,6 +67,15 @@ function App() {
   const [ apiUrl, setApiUrl ] = useState<string>('');
   const [ token, setToken ] = useState<string>('');
   const [ servers, setServers ] = useState<ServiceDeployment[]>([]);
+  const [ uploadOptions, setUploadOptions ] = useState<{
+    objectType: string;
+    objectId: string;
+  }>({
+    objectType: 'workrequest',
+    objectId: '761611117396515',
+  });
+  const [ uploadStatus, setUploadStatus ] = useState<any | undefined>();
+  var operId = '';
 
   const getColorScheme = async () => {
     const cs = await bridge.getColorScheme();
@@ -144,6 +154,18 @@ function App() {
     console.log('Webapp function setServerUrls: ', values);
   }
 
+  const uploadFile = async () => {
+    const options = {
+      type: 'imageLibrary',
+			editingType: 'full',
+			allowsMultipleSelection: false,
+			base64: false,
+			mediaTypes: 'images',
+			stickers: [],
+    };
+    operId = await bridge.pickPhoto(options);
+  }
+
   useEffect(() => {
     // Subscribe to events from react native.
     return () => {
@@ -163,13 +185,24 @@ function App() {
         console.log('Webapp message pickPhotoResult: ', message);
         if (!message.canceled) {
           setImage(message.assets[0]);
+          if (message.id === operId) {
+            bridge.submitUpload('workrequest', '761611117396515', message.assets);
+          }
         }
       });
       bridge.addEventListener("editPhotoResult", (message: any) => {
         console.log('Webapp message editPhotoResult: ', message);
         if (!message.canceled) {
           setImage(message.asset);
+          if (message.id === operId) {
+            console.log('==== submit upload 2');
+            bridge.submitUpload('workrequest', '761611117396515', [message.asset]);
+          }
         }
+      });
+      bridge.addEventListener('uploadResult', (message: any) => {
+        console.log('Webapp message uploadResult: ', message);
+        setUploadStatus(message);
       });
     };
   }, []);
@@ -361,6 +394,34 @@ function App() {
           <button onClick={setServerUrls}>Set Server URLs</button>
           <div>
             <div>{JSON.stringify(servers)}</div>
+          </div>
+        </div>
+        <h3>Upload File</h3>
+        <div>
+          <select name="uploadObjectType"
+            value={`${uploadOptions.objectType}`}
+            onChange={e => setUploadOptions(val => {
+              const objectType = e.target.value;
+              return {
+                ...val,
+                objectType,
+              };
+            })}
+          >
+            <option value="proposal">Proposal</option>
+            <option value="workrequest">Workrequest</option>
+            <option value="invoice">Invoice</option>
+          </select>
+          <input name='uploadObjectId' value={`${uploadOptions.objectId}`} onChange={e => setUploadOptions(val => {
+            const id = e.target.value;
+            return {
+              ...val,
+              objectId: id,
+            };
+          })} />
+          <button onClick={uploadFile}>Edit & Upload</button>
+          <div>
+            <div>[{JSON.stringify(uploadStatus)}]</div>
           </div>
         </div>
       </header>
