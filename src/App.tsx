@@ -75,7 +75,6 @@ function App() {
     objectId: '761611117396515',
   });
   const [ uploadStatus, setUploadStatus ] = useState<any | undefined>();
-  var operId = '';
 
   const getColorScheme = async () => {
     const cs = await bridge.getColorScheme();
@@ -163,7 +162,9 @@ function App() {
 			mediaTypes: 'images',
 			stickers: [],
     };
-    operId = await bridge.pickPhoto(options);
+    const operId = await bridge.pickPhoto(options);
+    localStorage.setItem('operId', operId);
+    console.log('==== operId:', operId);
   }
 
   useEffect(() => {
@@ -185,8 +186,9 @@ function App() {
         console.log('Webapp message pickPhotoResult: ', message);
         if (!message.canceled) {
           setImage(message.assets[0]);
+          const operId = localStorage.getItem('operId');
           if (message.id === operId) {
-            bridge.submitUpload('workrequest', '761611117396515', message.assets);
+            bridge.submitUpload(uploadOptions.objectType, uploadOptions.objectId, message.assets);
           }
         }
       });
@@ -194,9 +196,9 @@ function App() {
         console.log('Webapp message editPhotoResult: ', message);
         if (!message.canceled) {
           setImage(message.asset);
+          const operId = localStorage.getItem('operId');
           if (message.id === operId) {
-            console.log('==== submit upload 2');
-            bridge.submitUpload('workrequest', '761611117396515', [message.asset]);
+            bridge.submitUpload(uploadOptions.objectType, uploadOptions.objectId, [message.asset]);
           }
         }
       });
@@ -205,7 +207,7 @@ function App() {
         setUploadStatus(message);
       });
     };
-  }, []);
+  });
   
   return (
     <div>
@@ -421,7 +423,8 @@ function App() {
           })} />
           <button onClick={uploadFile}>Edit & Upload</button>
           <div>
-            <div>[{JSON.stringify(uploadStatus)}]</div>
+            <div>{JSON.stringify(uploadOptions)}</div>
+            <div>{JSON.stringify(uploadStatus)}</div>
           </div>
         </div>
       </header>
