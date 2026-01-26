@@ -76,6 +76,45 @@ function App() {
   });
   const [ uploadStatus, setUploadStatus ] = useState<any | undefined>();
 
+  const init = async () => {
+    bridge.addEventListener("scanBarcodeResult", (message: any) => {
+      console.log('Webapp message scanBarcodeResult: ', message);
+      if (!message.canceled) {
+        setBarcode(message.values);
+      }
+    });
+    bridge.addEventListener("readNfcTagResult", (message: any) => {
+      console.log('Webapp message readNfcTagResult: ', message);
+      if (!message.canceled) {
+        setNfcTagValue(message.values);
+      }
+    });
+    bridge.addEventListener("pickPhotoResult", (message: any) => {
+      console.log('Webapp message pickPhotoResult: ', message);
+      if (!message.canceled) {
+        setImage(message.assets[0]);
+        const operId = localStorage.getItem('operId');
+        if (message.id === operId) {
+          bridge.submitUpload(uploadOptions.objectType, uploadOptions.objectId, message.assets);
+        }
+      }
+    });
+    bridge.addEventListener("editPhotoResult", (message: any) => {
+      console.log('Webapp message editPhotoResult: ', message);
+      if (!message.canceled) {
+        setImage(message.asset);
+        const operId = localStorage.getItem('operId');
+        if (message.id === operId) {
+          bridge.submitUpload(uploadOptions.objectType, uploadOptions.objectId, [message.asset]);
+        }
+      }
+    });
+    bridge.addEventListener('uploadResult', (message: any) => {
+      console.log('Webapp message uploadResult: ', message);
+      setUploadStatus(message);
+    });
+  }
+
   const getColorScheme = async () => {
     const cs = await bridge.getColorScheme();
     console.log('Webapp function getColorScheme: ', cs);
@@ -164,49 +203,10 @@ function App() {
     };
     const operId = await bridge.pickPhoto(options);
     localStorage.setItem('operId', operId);
-    console.log('==== operId:', operId);
   }
 
   useEffect(() => {
-    // Subscribe to events from react native.
-    return () => {
-      bridge.addEventListener("scanBarcodeResult", (message: any) => {
-        console.log('Webapp message scanBarcodeResult: ', message);
-        if (!message.canceled) {
-          setBarcode(message.values);
-        }
-      });
-      bridge.addEventListener("readNfcTagResult", (message: any) => {
-        console.log('Webapp message readNfcTagResult: ', message);
-        if (!message.canceled) {
-          setNfcTagValue(message.values);
-        }
-      });
-      bridge.addEventListener("pickPhotoResult", (message: any) => {
-        console.log('Webapp message pickPhotoResult: ', message);
-        if (!message.canceled) {
-          setImage(message.assets[0]);
-          const operId = localStorage.getItem('operId');
-          if (message.id === operId) {
-            bridge.submitUpload(uploadOptions.objectType, uploadOptions.objectId, message.assets);
-          }
-        }
-      });
-      bridge.addEventListener("editPhotoResult", (message: any) => {
-        console.log('Webapp message editPhotoResult: ', message);
-        if (!message.canceled) {
-          setImage(message.asset);
-          const operId = localStorage.getItem('operId');
-          if (message.id === operId) {
-            bridge.submitUpload(uploadOptions.objectType, uploadOptions.objectId, [message.asset]);
-          }
-        }
-      });
-      bridge.addEventListener('uploadResult', (message: any) => {
-        console.log('Webapp message uploadResult: ', message);
-        setUploadStatus(message);
-      });
-    };
+    init();
   });
   
   return (
